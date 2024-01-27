@@ -39,6 +39,8 @@ public class CghsCardInsertion {
 		System.out.println( objMapper.writeValueAsString(responseAPIDetails));   
 		return responseAPIDetails;
 	}
+	
+	
 
 	@RequestMapping(method = RequestMethod.POST, value = "/addFamilyMember")
 	public ResponseAPIDetails addBeneficiaryFamilyMember(@RequestBody CardFullDetailsDTO cardFullDetailsDTO,
@@ -65,15 +67,11 @@ public class CghsCardInsertion {
 	
 	@RequestMapping(method = RequestMethod.POST, value = "/uploadImage")
 	public String beneficiaryImageUpload( @ModelAttribute BeneficiaryImageUploadDto beneficiaryImageUploadDto) {
-
-	MultipartFile multipartFile=beneficiaryImageUploadDto.getImageFile();
 	
-	System.out.println("------------------------------>"+multipartFile.getOriginalFilename());
-	
-	cghsCardInsertionServiceObj.uploadBeneficiaryImage(beneficiaryImageUploadDto);
+	 String  imageUPloadApiResponse= cghsCardInsertionServiceObj.uploadBeneficiaryImage(beneficiaryImageUploadDto);
 	
 	
-		return beneficiaryImageUploadDto.getBenid();
+		return imageUPloadApiResponse;
 	}
 	
 

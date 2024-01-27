@@ -8,6 +8,7 @@ import java.sql.Time;
 import java.time.LocalTime;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.persistence.EntityManager;
@@ -29,6 +30,7 @@ import Cghs.CghsCardFullDetailsAPI.Model.IndexCardModel;
 import Cghs.CghsCardFullDetailsAPI.Repositries.CardHolderAddressRepositry;
 import Cghs.CghsCardFullDetailsAPI.Repositries.FamilyDetailsRepositry;
 import Cghs.CghsCardFullDetailsAPI.Repositries.IndexCardRepositry;
+import Cghs.CghsCardFullDetailsAPI.RequestDTO.BeneficiaryImageUploadDto;
 import Cghs.CghsCardFullDetailsAPI.RequestDTO.CardFullDetailsDTO;
 import Cghs.CghsCardFullDetailsAPI.RequestDTO.CardHolderAddressDto;
 import Cghs.CghsCardFullDetailsAPI.RequestDTO.FamilyDetailsDto;
@@ -360,7 +362,7 @@ public class CghsCardInsertionDaoImpl implements CghsCardInsertionDao {
 				familyDetailsModelObj.setDispensary_code(
 						CghsCardFullCommon.fetchDispensaryCodeOfBeneficiary(familyDetailsDto.getMainCardHolder().getBen_id()));
 				familyDetailsModelObj.setId(familyDetailsDto.getMainCardHolder().getBen_id());
-				//connectoin change because it is already generating int Registration Bean
+				//condiution change because it is already generating int Registration Bean
 				familyDetailsModelObj.setBen_id(familyMemberDto.getBen_id());
 				familyDetailsModelObj.setPatient_no(
 						CghsCardFullCommon.getMaxumPatientNumber(familyDetailsDto.getMainCardHolder().getBen_id())+1);
@@ -457,6 +459,32 @@ public class CghsCardInsertionDaoImpl implements CghsCardInsertionDao {
 		}
 		return ben_id;
 
+	}
+
+	@Override
+	public FamilyDetailsModel updateFamilyDetailsTableBasedOnBenId(
+			BeneficiaryImageUploadDto beneficiaryImageUploadDto) {
+		
+	    Optional<FamilyDetailsModel>  familyDetails= 	familyDetailsRepositry.findById(beneficiaryImageUploadDto.getBenid());
+		
+	  if(familyDetails.isPresent()) {
+			Calendar calendar = Calendar.getInstance();
+			Date currentDateAndTime = calendar.getTime();
+		 FamilyDetailsModel familyDetailModelObj=     familyDetails.get();
+		 
+		 familyDetailModelObj.setPhoto_upload("1");
+		 
+		 familyDetailModelObj.setModify_date(currentDateAndTime);
+		 
+		 familyDetailModelObj.setOperator("testing");
+		 
+		 familyDetailsRepositry.save(familyDetailModelObj);
+		  }
+	    
+	    
+	    
+	
+		return null;
 	}
 
 

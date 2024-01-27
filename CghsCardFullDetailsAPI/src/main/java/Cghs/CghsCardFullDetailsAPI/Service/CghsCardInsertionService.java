@@ -28,7 +28,7 @@ public interface CghsCardInsertionService {
 	
 	ResponseAPIDetails updateBeneficiary();
 
-	ResponseAPIDetails uploadBeneficiaryImage(BeneficiaryImageUploadDto beneficiaryImageUploadDto);
+	String uploadBeneficiaryImage(BeneficiaryImageUploadDto beneficiaryImageUploadDto);
 	
 	
 	

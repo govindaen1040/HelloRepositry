@@ -20,8 +20,8 @@ public interface CghsCardInsertionDao {
 	
 	FamilyDetailsModel saveFamilyMember(FamilyDetailsModel familyDetailsModelObj, int i,
 			FamilyMemberDto familyMemberDto,CardFullDetailsDTO cardFullDetailsDTO);
-	
-	FamilyDetailsModel updateFamilyDetails(BeneficiaryImageUploadDto beneficiaryImageUploadDto);
+
+	FamilyDetailsModel updateFamilyDetailsTableBasedOnBenId(BeneficiaryImageUploadDto beneficiaryImageUploadDto);
 	
 	
 	//FamilyDetailsModel saveFamilyDetails();

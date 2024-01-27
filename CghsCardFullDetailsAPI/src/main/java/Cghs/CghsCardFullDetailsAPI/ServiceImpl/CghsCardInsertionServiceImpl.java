@@ -1,6 +1,7 @@
 package Cghs.CghsCardFullDetailsAPI.ServiceImpl;
 
 import java.io.File;
+import java.net.http.HttpResponse;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,6 +14,14 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletRequest;
+
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
@@ -50,10 +59,9 @@ public class CghsCardInsertionServiceImpl implements CghsCardInsertionService {
 	private CghsCardInsertionDao cghsCardInsertionDaoObj;
 	@Autowired
 	private ObjectMapper objMapper;
-	
+
 	@PersistenceContext
-    private EntityManager entityManager;
-	
+	private EntityManager entityManager;
 
 	public ResponseAPIDetails insertCghsCard(CardFullDetailsDTO cardFullDetailsDTO, HttpServletRequest request) {
 		java.util.Date start_execution_time = new java.util.Date();
@@ -67,8 +75,9 @@ public class CghsCardInsertionServiceImpl implements CghsCardInsertionService {
 			String statuscode = "";
 			String ipAdd = request.getRemoteAddr();
 			String userId = "";
-		//	CghsCardInsertionServiceImpl.log(new RecordLog(jsonRequest, currentdateTime, apiExecutionTime, apiResponse,
-	//				statuscode, ipAdd, userId));
+			// CghsCardInsertionServiceImpl.log(new RecordLog(jsonRequest, currentdateTime,
+			// apiExecutionTime, apiResponse,
+			// statuscode, ipAdd, userId));
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
 		}
@@ -89,11 +98,10 @@ public class CghsCardInsertionServiceImpl implements CghsCardInsertionService {
 //
 		String indexCardStatus = CghsCardFullDetailsValidation
 				.cghsValidationMethodForIndexCard(cardFullDetailsDTO.getIndexCard());
-		
-		
-	//	String familyDetailsStatus="successfd";
-		//String mchAddressStatus="successcha";//
-		//String indexCardStatus="successic";//successfd//successcha
+
+		// String familyDetailsStatus="successfd";
+		// String mchAddressStatus="successcha";//
+		// String indexCardStatus="successic";//successfd//successcha
 
 		if (mchAddressStatus.matches("successcha") && indexCardStatus.matches("successic")
 				&& familyDetailsStatus.matches("successfd")) {
@@ -128,15 +136,15 @@ public class CghsCardInsertionServiceImpl implements CghsCardInsertionService {
 						saveCardFullDetailsstatus = "Data not inserted in card_holder_address";
 					} else if (savedFamilyDetailsModel == null) {
 						saveCardFullDetailsstatus = "Data not inserted in family_details";
-					}  else if (savedIndexCardModel == null) {
+					} else if (savedIndexCardModel == null) {
 						saveCardFullDetailsstatus = "Data not inserted in index_card";
-					}else {
+					} else {
 						saveCardFullDetailsstatus = "Data Successfully inserted  in All three table";
 						apiData = new ApiDetails().setapiData("v1", "S", "Success");
 						resTestObj.setApiDetails(apiData);
 						CardInsertionUpdationResponseDto cardInsertionUpdationResponseDto = new CardInsertionUpdationResponseDto();
 						cardInsertionUpdationResponseDto.setCardInsetionUpdationResponse(saveCardFullDetailsstatus);
-						cardInsertionUpdationResponseDto.setBen_id(savedCardHolderAddressModel.getBen_id());	
+						cardInsertionUpdationResponseDto.setBen_id(savedCardHolderAddressModel.getBen_id());
 						cardInsertionUpdationResponseDto.setCard_no(savedCardHolderAddressModel.getCard_no());
 
 						List<CardInsertionUpdationResponseDto> cardInsertionUpdationResponseDtoListObj = new ArrayList<>();
@@ -145,11 +153,10 @@ public class CghsCardInsertionServiceImpl implements CghsCardInsertionService {
 						ServiceToControllerParams serviceToControllerParams = new ServiceToControllerParams();
 						serviceToControllerParams.setResult(cardInsertionUpdationResponseDtoListObj);
 						resTestObj.setResult(serviceToControllerParams.getResult());
-                        
+
 					}
 					apiData = new ApiDetails().setapiData("v1", "F", saveCardFullDetailsstatus);
 					resTestObj.setApiDetails(apiData);
-
 
 					// System.out.println(responseMetaData+"responseMetaData");
 					// resTestObj.setApiDetails(responseMetaData);
@@ -266,11 +273,11 @@ public class CghsCardInsertionServiceImpl implements CghsCardInsertionService {
 			if (checkValidationRespoonse.matches("successfd")) {
 				FamilyDetailsModel familyDetailsModel = cghsCardInsertionDaoObj.saveFamilyMember(familyDetailsModelObj,
 						i, familyMemberDto, cardFullDetailsDTO);
-				
+
 				if (familyDetailsModel == null) {
 					apiData = new ApiDetails().setapiData("v1", "F", "Data not saved in Family_details table");
 					responseAPIDetails.setApiDetails(apiData);
-				}else {
+				} else {
 					apiData = new ApiDetails().setapiData("v1", "S", "Success");
 					responseAPIDetails.setApiDetails(apiData);
 					AddFamilyMemberResponseDto addFamilyMemberResponseDto = new AddFamilyMemberResponseDto();
@@ -332,85 +339,94 @@ public class CghsCardInsertionServiceImpl implements CghsCardInsertionService {
 	}
 
 	@Override
-	public ResponseAPIDetails uploadBeneficiaryImage(BeneficiaryImageUploadDto beneficiaryImageUploadDto) {
+	public String uploadBeneficiaryImage(BeneficiaryImageUploadDto beneficiaryImageUploadDto) {
 
-		String result= callExistingImageUploadApi(beneficiaryImageUploadDto);
-		String imagUploadApiResponse=null;
-		result=result.trim();
-		if(result.equals("Yes")){
+		String result = callExistingImageUploadApi(beneficiaryImageUploadDto);
+		String imagUploadApiResponse = null;
+		result = result.trim();
+		if (result.equals("Yes")) {
 
-			if("jpg".equals(beneficiaryImageUploadDto.getFileUploadType())){
+			if ("jpg".equals(beneficiaryImageUploadDto.getFileUploadType())) {
 
-			        String Query = "INSERT INTO FamilyIndexCardLog \" +\r\n"
-			        		+ "                      \"(cardNo, cardType, dispensaryCode, patientNo, name, sex, relation, bloodGroup, \" +\r\n"
-			        		+ "                      \"dateOfBirth, flag, deleteTransfer, id, benId, operator, modifyDate, \" +\r\n"
-			        		+ "                      \"noOfBeneficiaries, departmentCode, icNo, zone, validFrom, validTo, address1, \" +\r\n"
-			        		+ "                      \"address2, locality, cityCode, district, pinCode, officePhoneNo, residencePhoneNo, \" +\r\n"
-			        		+ "                      \"email, remarks, ifDisabled, mobileNo, mobile, photoUpload) \" +\r\n"
-			        		+ "                      \"SELECT fm.cardNo, fm.cardType, fm.dispensaryCode, fm.patientNo, fm.name, fm.sex, \" +\r\n"
-			        		+ "                      \"fm.relation, fm.bloodGroup, fm.dateOfBirth, fm.flag, fm.deleteTransfer, fm.id, \" +\r\n"
-			        		+ "                      \"fm.benId, ch.operator, fm.modifyDate, ic.noOfBeneficiaries, ic.departmentCode, \" +\r\n"
-			        		+ "                      \"ic.icNo, ic.zone, ic.validFrom, ic.validTo, ch.address1, ch.address2, ch.locality, \" +\r\n"
-			        		+ "                      \"ch.cityCode, ch.district, ch.pinCode, ch.officePhoneNo, ch.residencePhoneNo, \" +\r\n"
-			        		+ "                      \"fm.email, fm.remarks, fm.ifDisabled, ch.mobileNo, fm.mobile, fm.photoUpload \" +\r\n"
-			        		+ "                      \"FROM FamilyDetailsModel fm JOIN IndexCardModel ic ON ic.benId = fm.id \" +\r\n"
-			        		+ "                      \"JOIN CardHolderAddressModel ch ON ch.benId = fm.id \" +\r\n"
-			        		+ "                      \"WHERE fm.benId = :benId";
+				String Query = "INSERT INTO FamilyIndexCardLog \" +\r\n"
+						+ "                      \"(cardNo, cardType, dispensaryCode, patientNo, name, sex, relation, bloodGroup, \" +\r\n"
+						+ "                      \"dateOfBirth, flag, deleteTransfer, id, benId, operator, modifyDate, \" +\r\n"
+						+ "                      \"noOfBeneficiaries, departmentCode, icNo, zone, validFrom, validTo, address1, \" +\r\n"
+						+ "                      \"address2, locality, cityCode, district, pinCode, officePhoneNo, residencePhoneNo, \" +\r\n"
+						+ "                      \"email, remarks, ifDisabled, mobileNo, mobile, photoUpload) \" +\r\n"
+						+ "                      \"SELECT fm.cardNo, fm.cardType, fm.dispensaryCode, fm.patientNo, fm.name, fm.sex, \" +\r\n"
+						+ "                      \"fm.relation, fm.bloodGroup, fm.dateOfBirth, fm.flag, fm.deleteTransfer, fm.id, \" +\r\n"
+						+ "                      \"fm.benId, ch.operator, fm.modifyDate, ic.noOfBeneficiaries, ic.departmentCode, \" +\r\n"
+						+ "                      \"ic.icNo, ic.zone, ic.validFrom, ic.validTo, ch.address1, ch.address2, ch.locality, \" +\r\n"
+						+ "                      \"ch.cityCode, ch.district, ch.pinCode, ch.officePhoneNo, ch.residencePhoneNo, \" +\r\n"
+						+ "                      \"fm.email, fm.remarks, fm.ifDisabled, ch.mobileNo, fm.mobile, fm.photoUpload \" +\r\n"
+						+ "                      \"FROM FamilyDetailsModel fm JOIN IndexCardModel ic ON ic.benId = fm.id \" +\r\n"
+						+ "                      \"JOIN CardHolderAddressModel ch ON ch.benId = fm.id \" +\r\n"
+						+ "                      \"WHERE fm.benId = :benId";
 
-			        entityManager.createQuery(Query)
-                    .setParameter("benId", beneficiaryImageUploadDto.getBenid())
-                    .executeUpdate();
-	
-			}else {
-				imagUploadApiResponse="Image content is not correct.";
-	
+				entityManager.createQuery(Query).setParameter("benId", beneficiaryImageUploadDto.getBenid())
+						.executeUpdate();
+
+				cghsCardInsertionDaoObj.updateFamilyDetailsTableBasedOnBenId(beneficiaryImageUploadDto);
+
+			} else {
+				imagUploadApiResponse = "Image content is not correct.";
 			}
-	
+
 		}
-		if("No".equals(result)){  
-			imagUploadApiResponse="File has not been uploaded.";                 			
+		if ("No".equals(result)) {
+			imagUploadApiResponse = "File has not been uploaded.";
 		}
-		
-		
-		
-
-		return null;
-	}
-	
-	
-	
-	   String callExistingImageUploadApi(BeneficiaryImageUploadDto beneficiaryImageUploadDto){
-		   
-		   String apiUrl = "http://10.246.75.194/cghsapp/fileUploadService/uploadimage";
-			
-			 RestTemplate restTemplate = new RestTemplate();
-			 String apiResponse="No";
-			 org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-		        headers.setContentType(MediaType.MULTIPART_MIXED);
-		        headers.add("Authorization", "6DDGS&$H647678G7fh7jdhj@dfHDG67@332agddej3j3F#GDHH4784H");
-		        headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
-		        headers.add("Pragma", "no-cache");
-		        headers.add("Expires", "0");
-	 
-		        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-		        body.add("uploadedFile", new FileSystemResource(new File("path/to/your/file.jpg")));
-		        body.add("ben_id", beneficiaryImageUploadDto.getBenid());
-		        body.add("dispensary_code", beneficiaryImageUploadDto.getDispensary_code());
-		        body.add("contentType", beneficiaryImageUploadDto.getContentType());
-		        body.add("fileUploadType", beneficiaryImageUploadDto.getFileUploadType()); 
-			
-		        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-
-		        // Make the API call with POST method
-		        ResponseEntity<String> response = restTemplate.postForEntity(apiUrl, requestEntity, String.class);
-
-		        // Print the response
-		        System.out.println("Response: " + response.getBody());
-		        
-		         apiResponse=response.getBody();
-		
-		return apiResponse;
+		return imagUploadApiResponse;
 	}
 
-	
+	String callExistingImageUploadApi(BeneficiaryImageUploadDto beneficiaryImageUploadDto) {
+		String responseBody = "No";
+		String URLPATH = "http://10.246.75.194/cghsapp/fileUploadService/uploadimage";
+		CloseableHttpClient httpclient = null;
+		try {
+			HttpPost post = new HttpPost(URLPATH);
+			post.addHeader("Content-Type", "multipart/mixed; boundary=\"---Content Boundary\"");
+			post.addHeader("Authorization", "6DDGS&$H647678G7fh7jdhj@dfHDG67@332agddej3j3F#GDHH4784H");
+			post.addHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+			post.addHeader("Pragma", "no-cache");
+			post.addHeader("Expires", "0");
+
+			MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+			builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+
+			int lastIndex = beneficiaryImageUploadDto.getImageFile().getOriginalFilename().lastIndexOf(".");
+
+			String replacefileName = beneficiaryImageUploadDto.getImageFile().getOriginalFilename().substring(0,
+					lastIndex - 1);
+			String extension = ".jpg";
+			replacefileName = replacefileName.replace(replacefileName, beneficiaryImageUploadDto.getBenid())
+					+ extension;
+
+			builder.addBinaryBody("uploadedFile", beneficiaryImageUploadDto.getImageFile().getBytes(),
+					ContentType.DEFAULT_BINARY, replacefileName);
+			builder.setBoundary("---Content Boundary");
+			builder.addTextBody("ben_id", beneficiaryImageUploadDto.getBenid());
+			builder.addTextBody("dispensary_code", beneficiaryImageUploadDto.getDispensary_code());
+			builder.addTextBody("contentType", beneficiaryImageUploadDto.getContentType());
+			builder.addTextBody("fileUploadType", beneficiaryImageUploadDto.getFileUploadType());
+
+			httpclient = HttpClientBuilder.create().build();
+			org.apache.http.HttpEntity entity = builder.build();
+
+			post.setEntity(entity);
+
+			org.apache.http.HttpResponse response = httpclient.execute(post);
+
+			responseBody = response.toString();
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
+
+		return responseBody;
+	}
+
 }
